@@ -1,0 +1,60 @@
+version: "3.8"
+
+services:
+  tar1090:
+    image: ghcr.io/sdr-enthusiasts/docker-tar1090:latest
+    tty: true
+    container_name: tar1090
+    restart: always
+    environment:
+      - TZ="${TZ}"
+      - BEASTHOST=readsb
+      - LAT="${LAT}"
+      - LONG="${LON}"
+    volumes:
+      - /opt/adsb/tar1090/globe_history:/var/globe_history
+      - /opt/adsb/tar1090/timelapse1090:/var/timelapse1090
+      - /opt/adsb/tar1090/graphs1090:/var/lib/collectd
+      - /proc/diskstats:/proc/diskstats:ro
+    # - /run/airspy_adsb:/run/airspy_adsb
+    ports:
+      - 8078:80
+    tmpfs:
+      - /run:exec,size=64M
+      - /var/log
+  readsb:
+    image: ghcr.io/sdr-enthusiasts/docker-readsb-protobuf:latest
+    tty: true
+    container_name: readsb
+    hostname: readsb
+    restart: always
+    devices:
+      - /dev/bus/usb:/dev/bus/usb
+    ports:
+      - 8080:8080
+      - 30005:30005
+    environment:
+      - TZ="${TZ}"
+      - READSB_DCFILTER=true
+      - READSB_DEVICE_TYPE=rtlsdr
+      - READSB_FIX=true
+      - READSB_GAIN=autogain
+      - READSB_LAT="${LAT}"
+      - READSB_LON="${LON}"
+      - READSB_MODEAC=true
+      - READSB_RX_LOCATION_ACCURACY=${ACCURACY}
+      - READSB_STATS_RANGE=true
+      - READSB_NET_ENABLE=true
+      - READSB_RTLSDR_DEVICE=${DEVICE_SN}
+    volumes:
+      - readsbpb_rrd:/run/collectd
+      - readsbpb_autogain:/run/autogain
+      - /proc/diskstats:/proc/diskstats:ro
+    tmpfs:
+      - /run/readsb:size=64M
+      - /var/log:size=32M
+
+
+volumes:
+  readsbpb_rrd:
+  readsbpb_autogain:
